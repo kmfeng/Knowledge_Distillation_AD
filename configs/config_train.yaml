@@ -17,7 +17,7 @@ img_size : 128
 use_bias : False
 equal_network_size : False
 pretrain : True
-direction_loss_only : True
+direction_loss_only : False
 
 # Test
 localization_test : False

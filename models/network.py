@@ -40,7 +40,7 @@ class VGG(nn.Module):
         return self.activation
 
 
-def make_layers(cfg, batch_norm=False):
+def make_layers(cfg, use_bias, batch_norm=False):
     layers = []
     in_channels = 3
     outputs = []
@@ -60,8 +60,8 @@ def make_layers(cfg, batch_norm=False):
     return nn.Sequential(*layers)
 
 
-def make_arch(idx, cfg, batch_norm=False):
-  return VGG(make_layers(cfg[idx], batch_norm=batch_norm))
+def make_arch(idx, cfg, use_bias, batch_norm=False):
+  return VGG(make_layers(cfg[idx], use_bias, batch_norm=batch_norm))
 
 
 class Vgg16(torch.nn.Module):
@@ -96,7 +96,7 @@ def get_networks(config):
     experiment_name = config['experiment_name']
     dataset_name = config['dataset_name']
     normal_class = config['normal_class']
-
+    use_bias = config['use_bias']
     if equal_network_size:
         cfg = {
             'A': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
@@ -108,7 +108,7 @@ def get_networks(config):
 
     vgg = Vgg16(pretrain).cuda()
 
-    model = make_arch('A', cfg, True).cuda()
+    model = make_arch('A', cfg, use_bias, True).cuda()
     for j, item in enumerate(nn.ModuleList(model.features)):
         print('layer : {} {}'.format(j, item))
 

@@ -7,16 +7,24 @@ from test import *
 from utils.utils import *
 from dataloader import *
 from pathlib import Path
+from torch.autograd import Variable
+import pickle
 
 parser = ArgumentParser()
 parser.add_argument('--config', type=str, default='configs/config_train.yaml', help="training configuration")
 
 
-def main():
-    args = parser.parse_args()
-    config = get_config(args.config)
+def train_with_complete_loss(config):
+
+    direction_loss_only = config["direction_loss_only"]
+    assert direction_loss_only == False, "Direction Only is true and this block should not run"
+
+    experiment_name = config["experiment_name"]
 
     normal_class = config["normal_class"]
+    learning_rate = float(config['learning_rate'])
+    num_epochs = config["num_epochs"]
+    lamda = config['lamda']
 
     checkpoint_path = "./outputs/{}/{}/checkpoints/".format(config['experiment_name'], config['dataset_name'])
     train_output_path = "./outputs/{}/{}/train_outputs/".format(config['experiment_name'], config['dataset_name'])
@@ -25,12 +33,84 @@ def main():
     Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
     Path(train_output_path).mkdir(parents=True, exist_ok=True)
 
-    epsilon = float(config['eps'])
-    alpha = float(config['alpha'])
+    train_dataloader, _ = load_data(config)
+    vgg, model = get_networks(config)
 
-    train_dataloader, _, _ = load_data(config)
+    # Criteria And Optimizers
+    criterion = nn.MSELoss()
+    similarity_loss = torch.nn.CosineSimilarity()
 
-    vgg,model = get_networks(config)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    model.train()
+
+    losses = []
+    roc_aucs = []
+    for epoch in range(num_epochs):  #
+        model.train()
+        epoch_loss = 0
+        for data in train_dataloader:
+            X = data[0]
+            # X = X.repeat(1, 3, 1, 1)
+            X = Variable(X).cuda()
+            # Precit the output for Given input
+            # adv_X = fgsm_attack(X, model)
+            # print(len(output_pred))
+            output_pred = model.forward(X)
+            output_real = vgg(X)
+            y_pred_0, y_pred_1, y_pred_2, y_pred_3 = output_pred[3], output_pred[6], output_pred[9], output_pred[12]
+            y_0, y_1, y_2, y_3 = output_real[3], output_real[6], output_real[9], output_real[12]
+            # Compute Cross entropy loss
+            # print(y_pred_0.shape)
+            # print(y_0.shape)
+            abs_loss_0 = criterion(y_pred_0, y_0)
+            loss_0 = torch.mean(1 - similarity_loss(y_pred_0.view(y_pred_0.shape[0], -1), y_0.view(y_0.shape[0], -1)))
+            abs_loss_1 = criterion(y_pred_1, y_1)
+            loss_1 = torch.mean(1 - similarity_loss(y_pred_1.view(y_pred_1.shape[0], -1), y_1.view(y_1.shape[0], -1)))
+            abs_loss_2 = criterion(y_pred_2, y_2)
+            loss_2 = torch.mean(1 - similarity_loss(y_pred_2.view(y_pred_2.shape[0], -1), y_2.view(y_2.shape[0], -1)))
+            abs_loss_3 = criterion(y_pred_3, y_3)
+            loss_3 = torch.mean(1 - similarity_loss(y_pred_3.view(y_pred_3.shape[0], -1), y_3.view(y_3.shape[0], -1)))
+
+            total_loss = loss_0 + loss_1 + loss_2 + loss_3 + lamda * (abs_loss_0 + abs_loss_1 + abs_loss_2 + abs_loss_3)
+            dist_loss = 0
+
+            total_loss += dist_loss
+
+            # Add loss to the list
+            epoch_loss += total_loss.item()
+            losses.append(total_loss.item())
+            # Clear the previous gradients
+            optimizer.zero_grad()
+            # Compute gradients
+            total_loss.backward()
+            # Adjust weights
+            optimizer.step()
+        print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, num_epochs, epoch_loss))
+
+        if epoch % 10 == 0:
+            # show_process_for_trainortest(X, X, X, attack = True)
+            roc_auc = 0#test(model)
+            # roc_auc1 = test1(model)
+            roc_aucs.append(roc_auc)
+            print(roc_auc)
+            # print(roc_auc1)
+        if epoch % 10 == 0:
+            # show_process_for_trainortest(X, X, X, attack = True)
+            torch.save(model.state_dict(),
+                       '/content/drive/My Drive/{}/MVTec_{}_epoch_{}.pth'.format(experiment_name, normal_class, epoch))
+            torch.save(optimizer.state_dict(),
+                       '/content/drive/My Drive/{}/Opt_MVTec_{}_epoch{}.pth'.format(experiment_name, normal_class,
+                                                                                    epoch))
+            with open('/content/drive/My Drive/{}/AUC_{}_epoch{}.pickle'.format(experiment_name, normal_class, epoch),
+                      'wb') as f:
+                pickle.dump(roc_aucs, f)
+
+
+def main():
+    args = parser.parse_args()
+    config = get_config(args.config)
+    train_with_complete_loss(config)
 
 
 if __name__ == '__main__':

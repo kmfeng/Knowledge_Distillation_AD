@@ -11,7 +11,7 @@ from PIL import Image
 def load_data(config):
     normal_class = config['normal_class']
     batch_size = config['batch_size']
-    img_size = config['image_size']
+    img_size = 0#config['image_size']
 
     if config['dataset_name'] in ['cifar10']:
         img_transform = transforms.Compose([
@@ -55,8 +55,10 @@ def load_data(config):
 
     elif config['dataset_name'] in ['fashionmnist']:
         img_transform = transforms.Compose([
-            transforms.Resize(img_size),
-            transforms.ToTensor(),
+            #     transforms.Grayscale(num_output_channels=1),
+            transforms.Resize((32, 32)),
+            transforms.ToTensor()
+            #  transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))]
         ])
 
         os.makedirs("./train/FashionMNIST", exist_ok=True)
@@ -102,7 +104,7 @@ def load_data(config):
         test_set = ImageFolder(root=test_data_path, transform=orig_transform)
 
     train_dataloader = torch.utils.data.DataLoader(
-        train_set,
+        dataset,
         batch_size=batch_size,
         shuffle=True,
     )
