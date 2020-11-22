@@ -49,8 +49,8 @@ def train_with_complete_loss(config):
             X = data[0]
             if X.shape[1] == 1:
                 X = X.repeat(1, 3, 1, 1)
-            # X = Variable(X).cuda()
-            X = Variable(X)
+            X = Variable(X).cuda()
+            # X = Variable(X)
             # Precit the output for Given input
             # adv_X = fgsm_attack(X, model)
             # print(len(output_pred))

@@ -34,7 +34,7 @@ def detection_test(model, vgg, test_dataloader, config):
         X, Y = data
         if X.shape[1] == 1:
             X = X.repeat(1, 3, 1, 1)
-        X = Variable(X)  # .cuda()
+        X = Variable(X).cuda()
         output_pred = model.forward(X)
         output_real = vgg(X)
         y_pred_0, y_pred_1, y_pred_2, y_pred_3 = output_pred[3], output_pred[6], output_pred[9], output_pred[12]
@@ -83,7 +83,7 @@ def localization_test(model, vgg, test_dataloader, ground_truth, config):
 
 
 def grad_calc(inputs, model, vgg, config):
-    inputs = inputs  # .cuda()
+    inputs = inputs.cuda()
     inputs.requires_grad = True
     temp = torch.zeros(inputs.shape)
     lamda = config['lamda']
@@ -298,7 +298,7 @@ def gbp_localization(model, vgg, test_dataloader, config):
         for x in X:
             data = x.view(1, 3, 128, 128)
 
-            GBP = GuidedBackprop(model, vgg, 'cpu')
+            GBP = GuidedBackprop(model, vgg, 'cuda:0')
             gbp_saliency = abs(GBP.generate_gradients(data, config))
             gbp_saliency = (gbp_saliency - min(gbp_saliency.flatten())) / (
                     max(gbp_saliency.flatten()) - min(gbp_saliency.flatten()))
@@ -325,7 +325,7 @@ def smooth_grad_localization(model, vgg, test_dataloader, config):
         for x in X:
             data = x.view(1, 3, 128, 128)
 
-            vbp = VanillaSaliency(model, vgg, 'cpu', config)  # cuda:0
+            vbp = VanillaSaliency(model, vgg, 'cuda:0', config)
 
             smooth_grad_saliency = abs(generate_smooth_grad(data, 50, 0.05, vbp))
             smooth_grad_saliency = (smooth_grad_saliency - min(smooth_grad_saliency.flatten())) / (

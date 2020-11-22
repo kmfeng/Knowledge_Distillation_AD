@@ -107,8 +107,8 @@ def get_networks(config, load_checkpoint=False):
             'A': [16, 16, 'M', 16, 128, 'M', 16, 16, 256, 'M', 16, 16, 512, 'M', 16, 16, 512, 'M'],
         }
 
-    vgg = Vgg16(pretrain)  # .cuda()
-    model = make_arch('A', cfg, use_bias, True)  # .cuda()
+    vgg = Vgg16(pretrain).cuda()
+    model = make_arch('A', cfg, use_bias, True).cuda()
 
     for j, item in enumerate(nn.ModuleList(model.features)):
         print('layer : {} {}'.format(j, item))
