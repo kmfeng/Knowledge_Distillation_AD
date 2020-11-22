@@ -1,26 +1,27 @@
 # data parameters
-experiment_name : 'local_equal_net'
-dataset_name: cifar10 # cifar10-mnist-mvtech
+experiment_name: 'local_equal_net'
+dataset_name: fashionmnist # cifar10-mnist-mvtec-fashionmnist
 # training parameters
-num_epochs : 201 # MvTech-Ad:601 Cifar10:201 MNIST:51
-batch_size : 64
-learning_rate : 1e-3
+num_epochs: 201 # mvtec-Ad:601 Cifar10:201 MNIST:51
+batch_size: 64
+learning_rate: 1e-3
 
-normal_class : 8 # MvTech: 'capsule'
-
-# target_class = MVTech_good_dict[normal_class]
-
-lamda : 0.5 #MvTech-Ad:0.5 Others:0.01 
-
-img_size : 128
+normal_class: 8 #'capsule' # mvtec: 'capsule'
 
 
-use_bias : False
-equal_network_size : False
-pretrain : True
-direction_loss_only : False
+lamda: 0.01 #mvtec-Ad:0.5 Others:0.01
+
+mvtec_img_size: 128
+
+pretrain: True
+use_bias: False
+equal_network_size: False
+direction_loss_only: False
 
 # Test
-localization_test : False
+localization_test: False # False: For Detection --- True: For Localization Test
+localization_method: 'gbp' # gradients , smooth_grad , gbp
+last_checkpoint: 10
+
 
 

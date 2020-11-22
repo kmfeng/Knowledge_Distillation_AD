@@ -11,7 +11,6 @@ from PIL import Image
 def load_data(config):
     normal_class = config['normal_class']
     batch_size = config['batch_size']
-    img_size = 0#config['image_size']
 
     if config['dataset_name'] in ['cifar10']:
         img_transform = transforms.Compose([
@@ -21,16 +20,16 @@ def load_data(config):
             transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                  std=(0.229, 0.224, 0.225))])
 
-        os.makedirs("./Dataset/train/CIFAR10", exist_ok=True)
-        dataset = CIFAR10('./Dataset/train/CIFAR10', train=True, download=True, transform=img_transform)
+        os.makedirs("./Dataset/CIFAR10/train", exist_ok=True)
+        dataset = CIFAR10('./Dataset/CIFAR10/train', train=True, download=True, transform=img_transform)
         print("Cifar10 DataLoader Called...")
         print("All Train Data: ", dataset.data.shape)
         dataset.data = dataset.data[np.array(dataset.targets) == normal_class]
         dataset.targets = [normal_class] * dataset.data.shape[0]
         print("Normal Train Data: ", dataset.data.shape)
 
-        os.makedirs("./Dataset/test/CIFAR10", exist_ok=True)
-        test_set = CIFAR10("./Dataset/test/CIFAR10", train=False, download=True, transform=img_transform)
+        os.makedirs("./Dataset/CIFAR10/test", exist_ok=True)
+        test_set = CIFAR10("./Dataset/CIFAR10/test", train=False, download=True, transform=img_transform)
         print("Test Train Data:", test_set.data.shape)
 
     elif config['dataset_name'] in ['mnist']:
@@ -41,16 +40,16 @@ def load_data(config):
             #  transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))]
         ])
 
-        os.makedirs("./Dataset/train/MNIST", exist_ok=True)
-        dataset = MNIST('./Dataset/train/MNIST', train=True, download=True, transform=img_transform)
+        os.makedirs("./Dataset/MNIST/train", exist_ok=True)
+        dataset = MNIST('./Dataset/MNIST/train', train=True, download=True, transform=img_transform)
         print("MNIST DataLoader Called...")
         print("All Train Data: ", dataset.data.shape)
         dataset.data = dataset.data[np.array(dataset.targets) == normal_class]
         dataset.targets = [normal_class] * dataset.data.shape[0]
         print("Normal Train Data: ", dataset.data.shape)
 
-        os.makedirs("./Dataset/test/MNIST", exist_ok=True)
-        test_set = MNIST("./Dataset/test/MNIST", train=False, download=True, transform=img_transform)
+        os.makedirs("./Dataset/MNIST/test", exist_ok=True)
+        test_set = MNIST("./Dataset/MNIST/test", train=False, download=True, transform=img_transform)
         print("Test Train Data:", test_set.data.shape)
 
     elif config['dataset_name'] in ['fashionmnist']:
@@ -61,54 +60,45 @@ def load_data(config):
             #  transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))]
         ])
 
-        os.makedirs("./train/FashionMNIST", exist_ok=True)
-        dataset = FashionMNIST('./train/FashionMNIST', train=True, download=True, transform=img_transform)
+        os.makedirs("./Dataset/FashionMNIST/train", exist_ok=True)
+        dataset = FashionMNIST('./Dataset/FashionMNIST/train', train=True, download=True, transform=img_transform)
+        print("FashionMNIST DataLoader Called...")
+        print("All Train Data: ", dataset.data.shape)
         dataset.data = dataset.data[np.array(dataset.targets) == normal_class]
         dataset.targets = [normal_class] * dataset.data.shape[0]
+        print("Normal Train Data: ", dataset.data.shape)
 
-        train_set, val_set = torch.utils.data.random_split(dataset, [dataset.data.shape[0] - 851, 851])
+        os.makedirs("./Dataset/FashionMNIST/test", exist_ok=True)
+        test_set = FashionMNIST("./Dataset/FashionMNIST/test", train=False, download=True, transform=img_transform)
+        print("Test Train Data:", test_set.data.shape)
 
-        os.makedirs("./test/FashionMNIST", exist_ok=True)
-        test_set = FashionMNIST("./test/FashionMNIST", train=False, download=True, transform=img_transform)
-
-    elif config['dataset_name'] in ['MVTec']:
+    elif config['dataset_name'] in ['mvtec']:
         data_path = 'Dataset/MVTec/' + normal_class + '/train'
-        data_list = []
+
+        mvtec_img_size = config['mvtec_img_size']
 
         orig_transform = transforms.Compose([
-            transforms.Resize(img_size),
+            transforms.Resize([mvtec_img_size, mvtec_img_size]),
             transforms.ToTensor()
         ])
 
-        orig_dataset = ImageFolder(root=data_path, transform=orig_transform)
+        dataset = ImageFolder(
+            root=data_path,
+            transform=orig_transform
+        )
 
-        train_orig, val_set = torch.utils.data.random_split(orig_dataset, [len(orig_dataset) - 25, 25])
-        data_list.append(train_orig)
+        test_data_path = 'Dataset/MVTec/' + normal_class + '/test'
 
-        for i in range(3):
-            img_transform = transforms.Compose([
-                transforms.Resize(img_size),
-                transforms.RandomAffine(0, scale=(1.05, 1.2)),
-                transforms.ToTensor()])
-
-            dataset = ImageFolder(root=data_path, transform=img_transform)
-            data_list.append(dataset)
-
-        dataset = ConcatDataset(data_list)
-
-        train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        train_dataset_array = next(iter(train_loader))[0]
-        train_set = TensorDataset(train_dataset_array)
-
-        test_data_path = '/content/' + normal_class + '/test'
-        test_set = ImageFolder(root=test_data_path, transform=orig_transform)
+        test_set = ImageFolder(
+            root=test_data_path,
+            transform=orig_transform
+        )
 
     train_dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=True,
     )
-
     test_dataloader = torch.utils.data.DataLoader(
         test_set,
         batch_size=batch_size,
@@ -116,3 +106,50 @@ def load_data(config):
     )
 
     return train_dataloader, test_dataloader
+
+
+def load_localization_data(config):
+    normal_class = config['normal_class']
+
+    mvtec_img_size = config['mvtec_img_size']
+
+    orig_transform = transforms.Compose([
+        transforms.Resize([mvtec_img_size, mvtec_img_size]),
+        transforms.ToTensor()
+    ])
+
+    test_data_path = 'Dataset/MVTec/' + normal_class + '/test'
+
+    test_set = ImageFolder(
+        root=test_data_path,
+        transform=orig_transform
+    )
+
+    test_dataloader = torch.utils.data.DataLoader(
+        test_set,
+        batch_size=512,
+        shuffle=True,
+    )
+
+    ground_data_path = 'Dataset/MVTec/' + normal_class + '/ground_truth'
+
+    ground_dataset = ImageFolder(
+        root=ground_data_path,
+        transform=orig_transform
+    )
+
+    ground_dataloader = torch.utils.data.DataLoader(
+        ground_dataset,
+        batch_size=512,
+        num_workers=0,
+        shuffle=False
+    )
+
+    x_ground = next(iter(ground_dataloader))[0].numpy()
+
+    ground_temp = x_ground
+
+    std_groud_temp = np.transpose(ground_temp, (0, 2, 3, 1))
+    x_ground = std_groud_temp
+
+    return test_dataloader, x_ground

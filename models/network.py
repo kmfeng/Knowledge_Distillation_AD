@@ -91,7 +91,7 @@ class Vgg16(torch.nn.Module):
         return output
 
 
-def get_networks(config):
+def get_networks(config, load_checkpoint=False):
     equal_network_size = config['equal_network_size']
     pretrain = config['pretrain']
     experiment_name = config['experiment_name']
@@ -107,13 +107,21 @@ def get_networks(config):
             'A': [16, 16, 'M', 16, 128, 'M', 16, 16, 256, 'M', 16, 16, 512, 'M', 16, 16, 512, 'M'],
         }
 
-    vgg = Vgg16(pretrain).cuda()
+    vgg = Vgg16(pretrain)  # .cuda()
+    model = make_arch('A', cfg, use_bias, True)  # .cuda()
 
-    model = make_arch('A', cfg, use_bias, True).cuda()
     for j, item in enumerate(nn.ModuleList(model.features)):
         print('layer : {} {}'.format(j, item))
 
-    if not pretrain:
+    if load_checkpoint:
+        last_checkpoint = config['last_checkpoint']
+        checkpoint_path = "./outputs/{}/{}/checkpoints/".format(experiment_name, dataset_name)
+        model.load_state_dict(
+            torch.load('{}Cloner_{}_epoch_{}.pth'.format(checkpoint_path, normal_class, last_checkpoint)))
+        if not pretrain:
+            vgg.load_state_dict(
+                torch.load('{}Teacher_{}_random_vgg.pth'.format(checkpoint_path, normal_class)))
+    elif not pretrain:
         checkpoint_path = "./outputs/{}/{}/checkpoints/".format(experiment_name, dataset_name)
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 

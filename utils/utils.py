@@ -1,10 +1,6 @@
-import torch
-from torch.distributions import uniform
-import numpy as np
-import matplotlib.pyplot as plt
-import itertools
-import math
 import yaml
+import numpy as np
+import cv2
 
 
 # get configs
@@ -13,60 +9,34 @@ def get_config(config):
         return yaml.load(stream)
 
 
-def fgsm_attack(inputs, model, eps=0.1, alpha=2):
-    distribution = uniform.Uniform(torch.Tensor([-eps]), torch.Tensor([eps]))
-    delta = distribution.sample(inputs.shape)
-    delta = torch.squeeze(delta).reshape(-1, inputs.size(1), inputs.size(2), inputs.size(3))
-    delta = delta.cuda()
-    inputs = inputs.cuda()
-    ori_inputs = inputs
-    inputs += delta
-    inputs = torch.clamp(inputs, min=0, max=1)
-    inputs.requires_grad = True
-    outputs = model(inputs)
-    model.zero_grad()
-    loss_rec = torch.mean(torch.sum((outputs - ori_inputs) ** 2, dim=1))
-    loss_rec.backward()
-    delta = delta + alpha * inputs.grad.sign()
-    delta = torch.clamp(delta, min=-eps, max=eps)
-    adv_inputs = inputs + delta
-    adv_inputs = torch.clamp(adv_inputs, min=0, max=1).detach_()
-    return adv_inputs
+def convert_to_grayscale(im_as_arr):
+    grayscale_im = np.sum(np.abs(im_as_arr), axis=0)
+    im_max = np.percentile(grayscale_im, 99)
+    im_min = np.min(grayscale_im)
+    grayscale_im = (np.clip((grayscale_im - im_min) / (im_max - im_min), 0, 1))
+    grayscale_im = np.expand_dims(grayscale_im, axis=0)
+    return grayscale_im
 
 
-def show_process_for_trainortest(input_img, recons_img, puzzled_img=None, path="./"):
-    if input_img.shape[0] > 15:
-        n = 15
-    else:
-        n = input_img.shape[0]
-
-    channel = input_img.shape[1]
-
-    # print("Inputs:")
-    show(np.transpose(input_img[0:n].cpu().detach().numpy(), (0, 2, 3, 1)), channel=channel, path=path + "_input.png")
-    # print("Puzzle Input:")
-    show(np.transpose(puzzled_img[0:n].cpu().detach().numpy(), (0, 2, 3, 1)), channel=channel,
-         path=path + "_puzzle_input.png")
-    # print("Reconstructions:")
-    show(np.transpose(recons_img[0:n].cpu().detach().numpy(), (0, 2, 3, 1)), channel=channel,
-         path=path + "_reconstruction.png")
+def morphological_process(x):
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    kernel = kernel.astype(np.uint8)
+    binary_map = x.astype(np.uint8)
+    opening = cv2.morphologyEx(binary_map[0], cv2.MORPH_OPEN, kernel)
+    opening = opening.reshape(1, opening.shape[0], opening.shape[1])
+    for index in range(1, binary_map.shape[0]):
+        temp = cv2.morphologyEx(binary_map[index], cv2.MORPH_OPEN, kernel)
+        temp = temp.reshape(1, temp.shape[0], temp.shape[1])
+        opening = np.concatenate((opening, temp), axis=0)
+    return opening
 
 
-def show(image_batch, rows=1, channel=3, path="./test.png"):
-    # Set Plot dimensions
-    cols = np.ceil(image_batch.shape[0] / rows)
-    plt.rcParams['figure.figsize'] = (0.0 + cols, 0.0 + rows)  # set default size of plots
-
-    for i in range(image_batch.shape[0]):
-        plt.subplot(rows, cols, i + 1)
-        if channel != 1:
-            plt.imshow(image_batch[i])
-        else:
-            plt.imshow(image_batch[i].reshape(image_batch.shape[-2], image_batch.shape[-2]), cmap='gray')
-        plt.axis('off')
-    plt.savefig(path)
-
-
-
-
-
+def max_regarding_to_abs(a, b):
+    c = np.zeros(a.shape)
+    for i in range(len(a)):
+        for j in range(len(a[0])):
+            if abs(a[i][j]) >= abs(b[i][j]):
+                c[i][j] = a[i][j]
+            else:
+                c[i][j] = b[i][j]
+    return c
