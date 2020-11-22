@@ -9,6 +9,7 @@ class VGG(nn.Module):
     '''
     VGG model
     '''
+
     def __init__(self, features):
         super(VGG, self).__init__()
         self.features = features
@@ -52,7 +53,7 @@ def make_layers(cfg, use_bias, batch_norm=False):
         else:
             conv2d = nn.Conv2d(in_channels, cfg[i], kernel_size=3, padding=1, bias=use_bias)
             torch.nn.init.xavier_uniform_(conv2d.weight)
-            if batch_norm and cfg[i+1] != 'M':
+            if batch_norm and cfg[i + 1] != 'M':
                 layers += [conv2d, nn.BatchNorm2d(cfg[i]), nn.ReLU(inplace=True)]
             else:
                 layers += [conv2d, nn.ReLU(inplace=True)]
@@ -61,7 +62,7 @@ def make_layers(cfg, use_bias, batch_norm=False):
 
 
 def make_arch(idx, cfg, use_bias, batch_norm=False):
-  return VGG(make_layers(cfg[idx], use_bias, batch_norm=batch_norm))
+    return VGG(make_layers(cfg[idx], use_bias, batch_norm=batch_norm))
 
 
 class Vgg16(torch.nn.Module):

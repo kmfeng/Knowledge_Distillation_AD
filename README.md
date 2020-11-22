@@ -14,19 +14,19 @@ This repository performs Novelty/Anomaly Detection in the following datasets: MN
 
 Furthermore, Anomaly Localization have been performed on MVTecAD dataset.
 
-MNIST, Fashion-MNIST and CIFAR-10 datasets will be downloaded by Torchvision. You have to download [MVTecAD](https://www.mvtec.com/company/research/datasets/mvtec-ad/), [Head CT hemorrhage](http://www.kaggle.com/felipekitamura/head-ct-hemorrhage), and [Brain MRI Images for Brain Tumor Detection](http://www.kaggle.com/navoneel/brain-mri-images-for-brain-tumor-detection), and unpack them into the `Dataset` folder.
+MNIST, Fashion-MNIST and CIFAR-10 datasets will be downloaded by Torchvision. You have to download [MVTecAD](https://www.mvtec.com/company/research/datasets/mvtec-ad/), [Head CT Hemorrhage](http://www.kaggle.com/felipekitamura/head-ct-hemorrhage), and [Brain MRI Images for Brain Tumor Detection](http://www.kaggle.com/navoneel/brain-mri-images-for-brain-tumor-detection), and unpack them into the `Dataset` folder.
 
 
 ### 3- Train the Model:
-Start the training using the following command. The checkpoints will be saved in the folder `outputs/{dataset_name}/{normal_class}/checkpoints`.
+Start the training using the following command. The checkpoints will be saved in the folder `outputs/{experiment_name}/{dataset_name}/checkpoints`.
 
-Train parameters such as dataset_name, normal_class, batch_size and etc. can be specified in `configs/config_train.yaml`.
+Train parameters such as experiment_name, dataset_name, normal_class, batch_size and etc. can be specified in `configs/config.yaml`.
 ``` bash
-python train.py --config configs/config_train.yaml
+python train.py --config configs/config.yaml
 ```
 
 ### 4- Test the Trained Model:
-Test parameters can be specified in `configs/config_test.yaml`.
+Test parameters can also be specified in `configs/config.yaml`.
 ``` bash
-python test.py --config configs/config_test.yaml
+python test.py --config configs/config.yaml
 ```

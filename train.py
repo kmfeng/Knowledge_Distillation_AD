@@ -15,7 +15,6 @@ parser.add_argument('--config', type=str, default='configs/config_train.yaml', h
 
 
 def train_with_complete_loss(config):
-
     direction_loss_only = config["direction_loss_only"]
     assert direction_loss_only == False, "Direction Only is true and this block should not run"
 
