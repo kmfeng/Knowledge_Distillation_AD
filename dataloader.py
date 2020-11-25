@@ -93,6 +93,25 @@ def load_data(config):
             root=test_data_path,
             transform=orig_transform
         )
+    elif config['dataset_name'] in ['retina']:
+        data_path = 'Dataset/OCT2017/train'
+
+        orig_transform = transforms.Compose([
+            transforms.Resize([128, 128]),
+            transforms.ToTensor()
+        ])
+
+        dataset = ImageFolder(
+            root=data_path,
+            transform=orig_transform
+        )
+
+        test_data_path = 'Dataset/OCT2017/test'
+
+        test_set = ImageFolder(
+            root=test_data_path,
+            transform=orig_transform
+        )
 
     train_dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -109,6 +128,7 @@ def load_data(config):
 
 
 def load_localization_data(config):
+
     normal_class = config['normal_class']
 
     mvtec_img_size = config['mvtec_img_size']
